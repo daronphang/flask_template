@@ -1,16 +1,16 @@
 import logging
 import pymssql as p
 import psycopg2 as pg
+import snowflake.connector as s
+from snowflake.connector import DictCursor
 import requests as r
-import urllib3
 from abc import ABC, abstractmethod
 from functools import wraps
 from operator import itemgetter
 from celery.utils.log import get_task_logger
+from ..error_handlers import DBFailure, InvalidField
 
-from ..error_handling import DatabaseError, InvalidField
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logger = logging.getLogger(__name__)
 celery_logger = get_task_logger(__name__)
 
@@ -31,27 +31,31 @@ def db_decorator(f):
             except Exception as e:
                 db.conn.rollback()
                 logger_map[self.logger].error(e)
-                raise DatabaseError(str(e))
+                raise DBFailure(str(e))
     return wrapper
 
 
 # DB connection factory method
-def create_db(config: dict):
+def init_db_session(config: dict):
     if not config:
         return  # for unittesting
 
-    db_type = config['db_type']
+    dbtype = config['DB_TYPE']
 
     if dbtype == 'MSSQL':
         host, username, password, port, as_dict = itemgetter(
-            'host', 'username', 'password', 'port', 'as_dict')(config)
-        db_session = MSSQLDBConnectionSession(host, username, password, port, as_dict)
+            'HOST', 'USERNAME', 'PASSWORD', 'PORT', 'AS_DICT')(config)
+        db_session = MSSQLConnSession(host, username, password, port, as_dict)
     elif dbtype == 'PG':
         host, username, password, port = itemgetter(
-            'host', 'username', 'password', 'port')(config)
-        db_session = PGSQLConnectionSession(host, username, password, port)
+            'HOST', 'USERNAME', 'PASSWORD', 'PORT')(config)
+        db_session = PGSQLConnSession(host, username, password, port)
+    elif dbtype == 'SNOWFLAKE':
+        username, password, account, region, warehouse = itemgetter(
+            'USERNAME', 'PASSWORD', 'ACCOUNT', 'REGION', 'WAREHOUSE')(config)
+        db_session = SnowflakeConnSession(username, password, account, region, warehouse)
     else:
-        raise InvalidField(f'Unable to establish connection with db {db_type}')
+        raise InvalidField(f'unable to initialize db session for {db_type}')
 
     return db_session
    
@@ -72,15 +76,7 @@ class ContextManager(ABC):
         return True
 
 
-class HttpConnectionSession(ContextManager):
-    def __init__(self):
-        self.conn = r.Session()
-    
-    def __enter__(self):
-        return self.conn
-
-
-class PGSQLConnectionSession(ContextManager):
+class PGSQLConnSession(ContextManager):
     def __init__(
         self,
         host: str,
@@ -97,7 +93,7 @@ class PGSQLConnectionSession(ContextManager):
         self.cursor = self.conn.cursor(cursor_factory=pg.extras.RealDictCursor)
 
 
-class MSSQLDBConnectionSession(ContextManager):
+class MSSQLConnSession(ContextManager):
     def __init__(
         self,
         host: str,
@@ -114,3 +110,22 @@ class MSSQLDBConnectionSession(ContextManager):
         )
         self.as_dict = as_dict
         self.cursor = self.conn.cursor(as_dict=as_dict)
+
+
+class SnowflakeConnSession(ContextManager):
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        account: str,
+        region: str,
+        warehouse: str
+    ):
+        self.conn = s.connect(
+            user=username,
+            password=password,
+            account=account,
+            region=region,
+            warehouse=warehouse
+        )
+        self.cursor = self.conn.cursor(DictCursor)

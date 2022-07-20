@@ -1,54 +1,57 @@
-from .connectors import http_handler
-from .error_handling import HttpError
+from .requests import init_http_session
+from .error_handling import HTTPFailure
 
 
-class HttpMixin:
+class HTTPMixin:
     def get_request(self, params: dict, error: str):
         self.config = {
-            'method': 'GET',
-            'url': current_app.config['SHARED_URL'],
-            'params': dict,
-            'verify': False,
-            'logger': 'DEFAULT',
-            'error': error # to be set by respective methods
+            'METHOD': 'GET',
+            'URL': current_app.config['SHARED_URL'],
+            'PARAMS': dict,
+            'VERIFY': False,
+            'LOGGER': 'DEFAULT',
+            'ERROR': error # to be set by respective methods
         }
-        resp = http_handler(self.config)
+        resp = init_http_session(self.config)
         return resp
 
     def post_request(self, payload: dict, data: dict, error: str):
         self.config = {
-            'method': 'POST',
-            'url': current_app.config['SHARED_URL'],
-            'payload': payload,
-            'data': data,
-            'verify': False,
-            'logger': 'DEFAULT',
-            'error': error # to be set by respective methods
+            'METHOD': 'POST',
+            'URL': current_app.config['SHARED_URL'],
+            'PAYLOAD': payload,
+            'DATA': data,
+            'VERIFY': False,
+            'LOGGER': 'DEFAULT',
+            'ERROR': error # to be set by respective methods
         }
-        resp = http_handler(self.config)
+        resp = init_http_session(self.config)
         return resp.json()
 
 
 class EmailMixin:
-    def table_generator(self, content: list):
+    corr_id = 'TEST_CORR_ID'
+
+    def email_table_generator(self, content: list):
         # content is a list of rows
         table_headers = ''
         table_rows = ''
-        counter = 0
+        added_headers = False
 
         for row in content:
             table_row = ''
             for key, value in row.items():
                 # Generate table headers row
-                if counter < 1:
+                if not added_headers:
                     table_headers += f'<th>{key}</th>'
             
                 # Generate content rows
                 table_row += f'<td>{value}</td>'
             
-            table_headers = '<tr>' + table_headers + '</tr>'
+            if not added_headers:
+                table_headers = '<tr>' + table_headers + '</tr>'
             table_rows += '<tr>' + table_row + '</tr>'
-            counter += 1
+            added_headers = True
         
         html_table = '<table border="1">' + table_headers + table_rows + '</table>'
         return html_table

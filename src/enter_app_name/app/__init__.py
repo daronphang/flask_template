@@ -4,8 +4,10 @@ from flask_marshmallow import Marshmallow
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from celery import Celery
+from enter_app_name.config import config, CeleryConfig
 
-from ..config import config, CeleryConfig
+
+origins = ['http://127.0.0.1:4200', 'http://localhost:4200']
 
 cors = CORS()
 mm = Marshmallow()
@@ -17,7 +19,6 @@ celery = Celery(
     broker=CeleryConfig.broker_url
 )
 
-origins = ['http://127.0.0.1:4200', 'http://localhost:4200']
 
 '''
 Application factory for application package. \
@@ -38,10 +39,10 @@ def create_app(config_name):
     celery.conf.update(app.config)
     update_celery(app, celery)
 
-    from enter_app_name.api.v1 import api_v1 as api_blueprint
+    from enter_app_name.app.api.v1 import api_v1 as api_blueprint
     app.register_blueprint(api_blueprint, url_prefix='/api/v1')
 
-    register_application_error(app)
+    register_app_errors(app)
 
     return app
 
@@ -55,26 +56,27 @@ def update_celery(app, celery):
     celery.Task = ContextTask
     return celery
 
-
-def register_application_error(app):
+def register_app_errors(app):
     @app.errorhandler(400)
-    def application_bad_request(e):
+    def app_bad_request(e):
         current_app.logger.error(e)
         return jsonify({
             'error': 'bad request',
             'message': e.description,
         }), 400
 
+
     @app.errorhandler(500)
-    def application_internal_server_error(e):
+    def app_internal_server_error(e):
         current_app.logger.error(e)
         return jsonify({
             'error': 'internal server error',
             'message': e.description
         }), 500
 
+
     @app.errorhandler(404)
-    def application_endpoint_not_found(e):
+    def app_endpoint_not_found(e):
         current_app.logger.error(e)
         return jsonify({
             'error': 'resource not found',

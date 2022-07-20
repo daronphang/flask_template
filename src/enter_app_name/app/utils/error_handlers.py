@@ -5,15 +5,14 @@ class CustomException(Exception):
         self.message = message
         if status_code is not None:
             self.status_code = status_code
+        Exception.__init__(self, message, status_code)
 
-        Exception.__init__(self)
 
-
-class HttpError(CustomException):
+class HTTPFailure(CustomException):
     pass
 
 
-class DatabaseError(CustomException):
+class DBFailure(CustomException):
     pass
 
 

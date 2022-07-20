@@ -1,17 +1,13 @@
-from flask import g, request
-from dotenv import load_dotenv
 import logging
 import os
+from flask import g, request, has_app_context, has_request_context
+from dotenv import load_dotenv
+from datetime import datetime
+from .logger_config import init_logger, CustomJSONFormatter, RequestFormatter
+
 
 load_dotenv()
 basedir = os.path.abspath(os.path.dirname(__file__))
-
-
-class RequestFormatter(logging.Formatter):
-    def format(self, record):
-        record.context = g.context
-        record.username = g.username if hasattr(g, 'username') else request.remote_addr  # noqa
-        return super().format(record)
 
 
 class CeleryConfig:
@@ -30,16 +26,24 @@ class Config:
     MAIL_PASSWORD = None
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_RECORD_QUERIES = False
-
-    SQLALCHEMY_DATABASE_URI = os.getenv("PG_DATABASE_URI")
+    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
     
-    SQLSERVER = {
-        'host': os.environ.get('SQLSERVER'),
-        'username': os.environ.get('SQLUSERNAME'),
-        'password': os.environ.get('SQLPASSWORD'),
-        'port': os.environ.get('SQLPORT'),
-        'db_type': 'MSSQL',
-        'as_dict': True
+    # SQLSERVER = {
+    #     'HOST': os.environ.get('SQLSERVER'),
+    #     'USERNAME': os.environ.get('SQLUSERNAME'),
+    #     'PASSWORD': os.environ.get('SQLPASSWORD'),
+    #     'PORT': os.environ.get('SQLPORT'),
+    #     'DB_TYPE': 'MSSQL',
+    #     'AS_DICT': True
+    # }
+
+    TSMSSPROD06 = {
+        'HOST': os.environ.get('TSMSSPROD06SERVER'),
+        'USERNAME': os.environ.get('TSMSSPROD06USERNAME'),
+        'PASSWORD': os.environ.get('TSMSSPROD06PASSWORD'),
+        'PORT': os.environ.get('TSMSSPROD06PORT'),
+        'DB_TYPE': 'MSSQL',
+        'AS_DICT': True
     }
  
     @staticmethod
@@ -54,22 +58,7 @@ class TestingConfig(Config):
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
-
-        import logging
-        from flask.logging import default_handler
-
-        app.logger.removeHandler(default_handler)
-        app.logger.setLevel(logging.DEBUG)
-        formatter = RequestFormatter(
-            '[%(asctime)s] %(username)s payload %(context)s '
-            '%(levelname)s in %(module)s: %(message)s'
-        )
-        logfile_handler = logging.FileHandler(
-            os.path.join(cls.BASEDIR, f'{cls.PROJECT_NAME}-TESTING.log')
-        )
-        logfile_handler.setFormatter(formatter)
-        logfile_handler.setLevel(logging.DEBUG)
-        app.logger.addHandler(logfile_handler)
+        init_logger('TESTING', CustomJSONFormatter, os.path.join(cls.BASEDIR, cls.PROJECT_NAME))
 
 
 class ProductionConfig(Config):
@@ -77,29 +66,11 @@ class ProductionConfig(Config):
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
-
-        import logging
-        from flask.logging import default_handler
-
-        app.logger.removeHandler(default_handler)
-        app.logger.setLevel(logging.INFO)
-        formatter = RequestFormatter(
-            '[%(asctime)s] %(username)s payload %(context)s '
-            '%(levelname)s in %(module)s: %(message)s'
-        )
-        logfile_handler = logging.RotatingFileHandler(
-            os.path.join(cls.BASEDIR, f'{cls.PROJECT_NAME}-PROD.log'),
-            maxBytes=1024000,
-            backupCount=10,
-            encoding='UTF-8'
-        )
-        logfile_handler.setFormatter(formatter)
-        logfile_handler.setLevel(logging.INFO)
-        app.logger.addHandler(logfile_handler)
+        init_logger('PRODUCTION', CustomJSONFormatter, os.path.join(cls.BASEDIR, cls.PROJECT_NAME))
 
 
 config = {
-    'testing': TestingConfig,
-    'production': ProductionConfig,
-    'default': TestingConfig
+    'TESTING': TestingConfig,
+    'PRODUCTION': ProductionConfig,
+    'DEFAULT': TestingConfig
 }

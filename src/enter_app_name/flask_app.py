@@ -4,7 +4,7 @@ import unittest
 from enter_app_name.app import create_app
 
 # To change accordingly when running in dev/prod
-app = create_app('testing')
+app = create_app('TESTING')
 
 
 @app.cli.command()

@@ -1,18 +1,17 @@
 import logging
-import time
 import requests as r
 import urllib3
 from functools import wraps
 from abc import abstractmethod, ABC
 from celery.utils.log import get_task_logger
-from ..error_handling import HttpError
+from .error_handlers import HTTPFailure
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logger = logging.getLogger(__name__)
 celery_logger = get_task_logger(__name__)
 
 
-def http_handler(config: dict):
+def init_http_session(config: dict):
     connection_map = {
         'GET': GetSession,
         'POST': PostSession,
@@ -23,15 +22,15 @@ def http_handler(config: dict):
         'CELERY': celery_logger
     }
 
-    if config['method'] in connection_map:
-        with connection_map[config['method']](config) as resp:
+    if config['METHOD'] in connection_map:
+        with connection_map[config['METHOD']](config) as resp:
             pass
         if resp.status_code > 300:
-            raise HttpError(config['error'])
+            raise HTTPFailure(config['ERROR'])
         return resp
     else:
-        logger_map(config['logger']).error('Invalid connection type passed to http_handler')
-        raise HttpError('Invalid connection type passed.')
+        logger_map(config['LOGGER']).error('invalid http request')
+        raise HTTPFailure('invalid http request')
 
 
 class HttpSession(ABC):
@@ -54,9 +53,9 @@ class HttpSession(ABC):
 class GetSession(HttpSession):
     def __enter__(self):
         return self.s.get(
-            self.config['url'],
-            params=self.config['params'],
-            verify=self.config['verify']
+            self.config['URL'],
+            params=self.config['PARAMS'],
+            verify=self.config['VERIFY']
         ) 
 
 
@@ -64,15 +63,15 @@ class PostSession(HttpSession):
     def __enter__(self):
         data = None
         payload = None
-        if 'data' in self.config:
-            data = self.config['data']
-        if 'payload' in self.config:
-            payload = self.config['payload']
+        if 'DATA' in self.config:
+            data = self.config['DATA']
+        if 'PAYLOAD' in self.config:
+            payload = self.config['PAYLOAD']
         return self.s.post(
-            self.config['url'],
+            self.config['URL'],
             json=payload,
             data=data,
-            verify=self.config['verify']
+            verify=self.config['VERIFY']
         )
 
 

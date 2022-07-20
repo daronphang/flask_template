@@ -1,2 +1,1 @@
-from .tasks import test_celery
-from .operations import *
+from .tasks import testing_celery

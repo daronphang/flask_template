@@ -4,17 +4,16 @@ from enter_app_name.app.utils import MissingSchema
 
 
 # Returns matched schema, else raise error
-def schema_handler(schema_name: str):
+def schema_handler(schema: str):
     schema_map = {
-        'update_rpa_form': UpdateRpaFormSchema,
+        'TESTING_SCHEMA': TestingSchema,
     }
-    if schema_name in schema_map:
-        return schema_map[schema_name]()
-    else:
-        raise MissingSchema(f'Schema {schema_name} does not exist.')
+    if schema in schema_map:
+        return schema_map[schema]()
+    raise MissingSchema(f'schema {schema_name} does not exist')
 
 
-class NestedSchema(ma.Schema):
+class NestedSchema(mm.Schema):
     field1 = fields.String(required=True)
     field2 = fields.Integer()
 
@@ -27,18 +26,21 @@ class GenericSchema(mm.Schema):
     field7 = fields.Raw(required=True)
 
 
-class CrudSchema(ma.Schema):
-    crud_name = fields.String(required=True)
-    crud_operation = fields.String(validate=validate.OneOf(["INSERT", "UPDATE", "DELETE"]))
-    query_fields = fields.Mapping(allow_none=True)
-    entries = fields.Raw(required=True)
+class TestingSchema(mm.Schema):
+    test_string = fields.String(required=True)
+
+# class CrudSchema(ma.Schema):
+#     crud_name = fields.String(required=True)
+#     crud_operation = fields.String(validate=validate.OneOf(["INSERT", "UPDATE", "DELETE"]))
+#     query_fields = fields.Mapping(allow_none=True)
+#     entries = fields.Raw(required=True)
 
 
-class CrudCaseEntrySchema(ma.Schema):
-    set_value = fields.Raw(required=True)
-    case_condition = fields.Mapping(required=True)
+# class CrudCaseEntrySchema(ma.Schema):
+#     set_value = fields.Raw(required=True)
+#     case_condition = fields.Mapping(required=True)
 
 
-class CrudUpdateCaseSchema(ma.Schema):
-    set_column = fields.String(required=True)
-    case_entries = fields.List(fields.Nested(CrudCaseEntrySchema))
+# class CrudUpdateCaseSchema(ma.Schema):
+#     set_column = fields.String(required=True)
+#     case_entries = fields.List(fields.Nested(CrudCaseEntrySchema))
