@@ -53,6 +53,15 @@ def app_internal_server_error(e):
     }), 500
 
 
+# @api_v1.errorhandler(NameError)
+# def app_internal_server_error(e):
+#     current_app.logger.error(e)
+#     return jsonify({
+#         'error': 'internal server error',
+#         'message': str(e)
+#     }), 500
+
+
 @api_v1.errorhandler(404)
 def app_endpoint_not_found(e):
     current_app.logger.error(e)

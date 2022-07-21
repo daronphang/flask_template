@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 celery_logger = get_task_logger(__name__)
 
 
-def db_decorator(f):
+def db_request(f):
     # self._db is an instance of database session class
     def wrapper(self, *args, **kwargs):
         logger_map = {
@@ -27,6 +27,7 @@ def db_decorator(f):
             try:
                 results = f(self, *args, **kwargs)
                 db.conn.commit()
+                db.cursor.close()
                 return results
             except Exception as e:
                 db.conn.rollback()

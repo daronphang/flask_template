@@ -1,17 +1,12 @@
 from flask import current_app, g, jsonify, request
 from . import api_v1
 from enter_app_name.app.utils import (
-    CrudOperations,
     binary_marshal,
     MissingKey,
     InvalidField
 )
-from enter_app_name.app.schemas import (
-    schema_handler,
-)
-from enter_app_name.app.tasks import tasks
-from .sql_query_utils import sql_query_string
-from .sql_crud_utils import sql_crud_params
+from enter_app_name.app.schemas import get_schema
+from enter_app_name.app.tasks import tasks, GetDPNDataTask
 
 
 @api_v1.route('/heartbeat', methods=['GET'])
@@ -19,10 +14,54 @@ def heartbeat():
     app_name = current_app.config['PROJECT_NAME']
     return jsonify({"response": f'{app_name} is alive'})
 
+
 @api_v1.route('/testing_schema', methods=['POST'])
 def testing_schema():
-    schema_handler('TESTING_SCHEMA').load(g.context)
+    get_schema('TESTING_SCHEMA').load(g.context)
     return jsonify({"response": "schema validated"})
+
+
+@api_v1.route('/task/<taskname>', methods=['POST'])
+def task(taskname):
+    taskname = taskname.upper()
+    get_schema('TASK').load(g.context)
+
+    userinfo, payload = g.context['userinfo'], g.context['payload']
+    get_schema(taskname).load(payload)
+
+    results = GetDPNDataTask(userinfo, payload, taskname).execute()
+    return jsonify({"response": results})
+
+
+@api_v1.route('/testing_celery')
+def testing_celery():
+    task = getattr(tasks, 'testing_celery')
+    resp = task.delay()
+
+    # task_id = uuid()
+    # resp = task.apply_async(kwargs={'taskname': 'testing'}, task_id=task_id)
+
+    return jsonify({"task_id": resp.id})
+
+
+@api_v1.route('/task_status', methods=['POST'])
+def task_status():
+    get_schema('CELERY_STATUS').load(g.context)
+    taskname = getattr(tasks, g.context['task_name'])
+    task = taskname.AsyncResult(g.context['task_id'])
+
+    resp = {'state': task.state}
+
+    if task.state == 'PENDING':
+        pass
+    elif task.state != 'FAILURE':
+        if hasattr(task, 'result'):
+            resp['result'] = getattr(task, 'result')
+    else:
+        # something went wrong in the background job
+        resp['error'] = str(resp.info.__repr__())
+
+    return jsonify(resp)
 
 
 # @api_v1.route('/crud', methods=['POST'])
@@ -67,29 +106,3 @@ def testing_schema():
 #         rv = CrudOperations(config).\
 #             get_method(payload['crud_name'])(payload, sql_ref)
 #     return jsonify({'response': rv})
-
-
-@api_v1.route('/testing_celery')
-def testing_celery():
-    task = getattr(tasks, 'testing_celery')
-    resp = task.delay()
-    return jsonify({"task_id": resp.id})
-
-
-@api_v1.route('/task_status', methods=['POST'])
-def task_status():
-    taskname = getattr(tasks, g.context['task_name'])
-    task = taskname.AsyncResult(g.context['task_id'])
-
-    resp = {'state': task.state}
-
-    if task.state == 'PENDING':
-        pass
-    elif task.state != 'FAILURE':
-        if hasattr(task, 'result'):
-            resp['result'] = getattr(task, 'result')
-    else:
-        # something went wrong in the background job
-        resp['error'] = str(resp.info.__repr__())
-
-        return jsonify(resp)

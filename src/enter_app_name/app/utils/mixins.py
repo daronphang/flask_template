@@ -1,5 +1,5 @@
 from .requests import init_http_session
-from .error_handling import HTTPFailure
+from .error_handlers import HTTPFailure
 
 
 class HTTPMixin:

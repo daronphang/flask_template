@@ -45,7 +45,18 @@ class Config:
         'DB_TYPE': 'MSSQL',
         'AS_DICT': True
     }
- 
+
+    SNOWFLAKE = {
+        'ACCOUNT': os.environ.get('SNOWFLAKEACCOUNT'),
+        'USERNAME': os.environ.get('SNOWFLAKEUSERNAME'),
+        'PASSWORD': os.environ.get('SNOWFLAKEPASSWORD'),
+        'ROLE': os.environ.get('SNOWFLAKEROLE'),
+        'REGION': os.environ.get('SNOWFLAKEREGION'),
+        'WAREHOUSE': os.environ.get('SNOWFLAKEWAREHOUSE'),
+        'DB_TYPE': 'SNOWFLAKE',
+    }
+
+    
     @staticmethod
     def init_app(app):
         # to customize configuration

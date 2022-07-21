@@ -1,14 +1,16 @@
 import os
 import logging
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from celery.app.log import TaskFormatter
+from celery._state import get_current_task
 from celery.signals import after_setup_task_logger, after_setup_logger
 from pythonjsonlogger import jsonlogger
 from .app import celery, create_app
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-app = create_app(os.getenv('FLASK_CONFIG') or 'default')
+app = create_app(os.getenv('FLASK_CONFIG') or 'DEFAULT')
 app.app_context().push()
 
 

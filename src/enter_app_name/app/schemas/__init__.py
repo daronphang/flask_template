@@ -1,1 +1,1 @@
-from .schemas import schema_handler
+from .schemas import get_schema

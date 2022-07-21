@@ -1,4 +1,4 @@
-sql_crud_params = {
+sql_crud_hash = {
     'update_some_table': {
             'table_name': 'db.my_table',
             'binary_columns': ['col1'],

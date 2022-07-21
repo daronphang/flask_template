@@ -3,6 +3,7 @@ import flask.json
 import pickle
 import logging
 import time
+import csv
 from celery.utils.log import get_task_logger
 
 logger = logging.getLogger(__name__)
@@ -57,3 +58,12 @@ def curry(fn, arg_count: int):
             raise Exception(f'number of args does not match with specified count')
         return fn(*args)
     return curried(args)
+
+def write_to_csv(filename: str, data: list):
+    # data is a list of dictionaries
+    fieldnames = data[0].keys()
+
+    with open(filename, 'w', newline='') as f:
+        write = csv.DictWriter(f, fieldnames)
+        write.writeheader()
+        write.writerows(data)

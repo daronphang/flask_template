@@ -1,7 +1,7 @@
-sql_map = {
-    'DPN_LOADPORT': {
+sql_query_hash = {
+    'GET_DPN_DATA': {
         'sql_string': '''
-            CALL "PROD_EPM_DM"."UTIL_USER"."UPD_PROXY_USER" (username);
+     
 
             SELECT
             EEH.EQUIP_ID,
@@ -52,7 +52,7 @@ sql_map = {
 
             ORDER BY EEH.LOT_ID, EEH.SLOT_NO
         ''',
-        'sql_helper': ['fab', 'equip_ids', 'start_date', 'end_date', 'loadport_entrance', 'loadport_exit'],
+        'sql_helper': ['fab', 'equip_ids', 'start_date', 'end_date', 'loadport_exit', 'loadport_entrance'],
         'db_helper': {
             'F10W': 'SNOWFLAKE',
             'F10N': 'SNOWFLAKE',

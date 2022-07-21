@@ -1,11 +1,19 @@
 import pickle
-from .error_handlers import InvalidField, MissingKey
+from ..error_handlers import InvalidField, MissingKey
+from .sessions import init_db_session, db_request
 
 # functions to convert entries for sql operations
 # returns placeholder string and actual values in tuple format for cursor.execute()
 # Schemas to take care of sql injections for column names
 
-class SqlStringFormatter:
+class SqlQuery:
+    def __init__(self, config: dict, payload: dict, sql_string: str, sql_helper: list, logger: str):
+        self.payload = payload
+        self.sql_string = sql_string
+        self.sql_helper = sql_helper
+        self._db = init_db_session(config)
+        self.logger = logger
+
     @staticmethod
     def format_data(data: any):
         if isinstance(data, str):
@@ -26,18 +34,57 @@ class SqlStringFormatter:
         else:
             raise InvalidField(f'sqlstringformmatter does not support {type(data)}')
     
-    def read(self, payload: dict, sql_string: str, sql_helper: list):
+    def format_query_string(self):
         subst_values = []
 
-        for key in sql_helper:
-            if key not in payload:
+        for key in self.sql_helper:
+            if key not in self.payload:
                 raise MissingKey(f'missing {key} in payload')
             
-            data = SqlStringFormatter.format_data(payload[key])
+            data = SqlQuery.format_data(self.payload[key])
             subst_values.append(data)
         
-        return sql_string.format(*subst_values)
+        return self.sql_string.format(*subst_values)
+    
+    @db_request
+    def query(self):
+        self._db.cursor.execute(self.format_query_string())
+        result = self._db.cursor.fetchall()
+        return result if result else 'no results returned from sql query'
 
+
+class SqlCrud:
+    def __init__(self, config):
+        self.config = config
+        self._db = init_db_session(config)
+        
+    def get_method(self, method_name):
+        if hasattr(self, method_name):
+            return getattr(self, method_name)        
+        raise InvalidField(f'Crud method {method_name} not found.')
+
+
+    # @db_decorator
+    # def simple_crud(self, payload: dict, sql_ref: dict):
+    #     # Generate hexadecimals of 8 bytes
+    #     '0x{}'.format(secrets.token_hex(7))
+
+    #     crud_name = payload['crud_name']
+    #     crud_operation = payload['crud_operation']
+    #     entries = payload['entries']
+    #     query_fields = payload['query_fields']
+    #     table_name = sql_ref['table_name']
+    #     binary_columns = sql_ref['binary_columns']
+    #     if crud_operation == 'INSERT':
+    #         formatted_str, values = SqlHelper.insert_formatter(table_name, entries, binary_columns)
+    #     elif crud_operation == 'UPDATE':
+    #         formatted_str, values = SqlHelper.update_formatter(table_name, entries, query_fields, binary_columns)
+    #     elif crud_operation == 'DELETE':
+    #         formatted_str, values = SqlHelper.delete_formatter(table_name, query_fields)
+    #     else:
+    #         pass
+    #     self._db.cursor.execute(formatted_str, values)
+    #     return {'message': f'Crud operation {crud_name} success.'}
 
     # @staticmethod
     # def value_formatter(value):

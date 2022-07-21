@@ -4,13 +4,16 @@ from enter_app_name.app.utils import MissingSchema
 
 
 # Returns matched schema, else raise error
-def schema_handler(schema: str):
+def get_schema(schema: str):
     schema_map = {
         'TESTING_SCHEMA': TestingSchema,
+        'TASK': TaskSchema,
+        'CELERY_STATUS': CeleryStatusSchema,
+        'GET_DPN_DATA': DPNDataSchema
     }
     if schema in schema_map:
         return schema_map[schema]()
-    raise MissingSchema(f'schema {schema_name} does not exist')
+    raise MissingSchema(f'schema {schema} does not exist')
 
 
 class NestedSchema(mm.Schema):
@@ -28,6 +31,29 @@ class GenericSchema(mm.Schema):
 
 class TestingSchema(mm.Schema):
     test_string = fields.String(required=True)
+
+
+class UserInfoSchema(mm.Schema):
+    username = fields.String(required=True)
+    fab = fields.String(validate=validate.OneOf(["F10W", "F10N"]))
+
+
+class TaskSchema(mm.Schema):
+    userinfo = fields.Nested(UserInfoSchema, required=True)
+    payload = fields.Mapping(required=True)
+
+
+class CeleryStatusSchema(mm.Schema):
+    task_id = fields.String(required=True)
+    task_name = fields.String(required=True)
+
+
+class DPNDataSchema(mm.Schema):
+    equip_ids = fields.List(fields.String(required=True))
+    start_date = fields.String(required=True)
+    end_date = fields.String(required=True)
+    loadport_entrance = fields.List(fields.String(required=True))
+    loadport_exit = fields.List(fields.String(required=True))
 
 # class CrudSchema(ma.Schema):
 #     crud_name = fields.String(required=True)
