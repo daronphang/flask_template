@@ -23,4 +23,4 @@ CELERY_BACKEND=redis://localhost:6379/0
 ## Starting Celery
 
 1. cd to src
-2. celery -A enter_app_name.celery_worker.celery worker --loglevel=info
+2. celery -A enter_app_name.celery_worker.celery worker --loglevel=info -P solo
