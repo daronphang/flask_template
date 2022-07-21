@@ -6,7 +6,7 @@ from enter_app_name.app.utils import (
     InvalidField
 )
 from enter_app_name.app.schemas import get_schema
-from enter_app_name.app.tasks import tasks, GetDPNDataTask
+from enter_app_name.app.tasks import tasks
 
 
 @api_v1.route('/heartbeat', methods=['GET'])
@@ -29,8 +29,10 @@ def task(taskname):
     userinfo, payload = g.context['userinfo'], g.context['payload']
     get_schema(taskname).load(payload)
 
-    results = GetDPNDataTask(userinfo, payload, taskname).execute()
-    return jsonify({"response": results})
+    task = getattr(tasks, 'automated_task')
+    resp = task.apply_async(kwargs={'taskname': taskname, 'userinfo': userinfo, 'payload': payload})
+
+    return jsonify({"message": f"{taskname} task registered", "task_id": resp.id}), 202
 
 
 @api_v1.route('/testing_celery')
@@ -60,6 +62,7 @@ def task_status():
     else:
         # something went wrong in the background job
         resp['error'] = str(resp.info.__repr__())
+        pass
 
     return jsonify(resp)
 
