@@ -9,7 +9,8 @@ def get_schema(schema: str):
         'TESTING_SCHEMA': TestingSchema,
         'TASK': TaskSchema,
         'CELERY_STATUS': CeleryStatusSchema,
-        'GET_DPN_DATA': DPNDataSchema
+        'GET_DPN_DATA': DPNDataSchema,
+        'PLOT_WEEKLY_SPC_OOC': PlotWeeklySPCOOCSchema,
     }
     if schema in schema_map:
         return schema_map[schema]()
@@ -54,6 +55,10 @@ class DPNDataSchema(mm.Schema):
     end_date = fields.String(required=True)
     loadport_entrance = fields.List(fields.String(required=True))
     loadport_exit = fields.List(fields.String(required=True))
+
+
+class PlotWeeklySPCOOCSchema(mm.Schema):
+    areas = fields.List(fields.String(required=True))
 
 # class CrudSchema(ma.Schema):
 #     crud_name = fields.String(required=True)

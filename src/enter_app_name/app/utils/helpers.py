@@ -67,3 +67,10 @@ def write_to_csv(filename: str, data: list):
         write = csv.DictWriter(f, fieldnames)
         write.writeheader()
         write.writerows(data)
+
+def composite_fn(*fns):
+    # takes a tuple of functions, and processes them from left to right
+    # result from each function is passed on to the next
+    def compose(f,g):
+        return lambda x: g(f(x))    # result from f(x) is passed to g as arg
+    return reduce(compose, fns)
