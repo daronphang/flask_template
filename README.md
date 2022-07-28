@@ -24,3 +24,13 @@ CELERY_BACKEND=redis://localhost:6379/0
 
 1. cd to src
 2. celery -A enter_app_name.celery_worker.celery worker --loglevel=info -P solo
+
+## Docker
+
+```console
+# cd to dockerfile directory or provide filename directly
+# $ docker build -t enter_app_name
+# $ docker build -t enter_app_name -f /docker/Dockerfile
+
+$ docker-compose up -d     # docker compose is using V2, which may interfere with env variables with spacing
+```

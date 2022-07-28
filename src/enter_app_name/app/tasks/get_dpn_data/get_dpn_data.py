@@ -10,7 +10,7 @@ load_dotenv()
 logger = get_task_logger(__name__)
 
 
-class GetDPNDataTask:
+class GetDPNDataTask(StandardTask):
     def __init__(self, userinfo: dict, payload: dict, taskname: str):
         self.userinfo = userinfo
         self.payload = payload
@@ -21,7 +21,7 @@ class GetDPNDataTask:
         
     def execute(self):
         # fetch from snowflake
-        logger.info('executing GetDPNDataTask')
+        logger.info('executing GetDPNData task...')
         fab = 7 if self.userinfo['fab'] == 'F10W' else 10
         self.payload['fab'] = fab
         sql_results = SqlQuery(

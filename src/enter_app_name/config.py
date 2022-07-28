@@ -56,7 +56,6 @@ class Config:
         'DB_TYPE': 'SNOWFLAKE',
     }
 
-    
     @staticmethod
     def init_app(app):
         # to customize configuration

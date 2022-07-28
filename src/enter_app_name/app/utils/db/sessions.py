@@ -1,6 +1,6 @@
 import logging
 import pymssql as p
-import psycopg2 as pg
+# import psycopg2 as pg
 import snowflake.connector as s
 from snowflake.connector import DictCursor
 import requests as r
@@ -47,10 +47,10 @@ def init_db_session(config: dict):
         host, username, password, port, as_dict = itemgetter(
             'HOST', 'USERNAME', 'PASSWORD', 'PORT', 'AS_DICT')(config)
         db_session = MSSQLConnSession(host, username, password, port, as_dict)
-    elif dbtype == 'PG':
-        host, username, password, port = itemgetter(
-            'HOST', 'USERNAME', 'PASSWORD', 'PORT')(config)
-        db_session = PGSQLConnSession(host, username, password, port)
+    # elif dbtype == 'PG':
+    #     host, username, password, port = itemgetter(
+    #         'HOST', 'USERNAME', 'PASSWORD', 'PORT')(config)
+    #     db_session = PGSQLConnSession(host, username, password, port)
     elif dbtype == 'SNOWFLAKE':
         username, password, account, region, warehouse = itemgetter(
             'USERNAME', 'PASSWORD', 'ACCOUNT', 'REGION', 'WAREHOUSE')(config)
@@ -77,21 +77,21 @@ class ContextManager(ABC):
         return True
 
 
-class PGSQLConnSession(ContextManager):
-    def __init__(
-        self,
-        host: str,
-        username: str,
-        password: str,
-        port: str
-    ):
-        self.conn = pg.connect(
-            host=host,
-            user=username,
-            password=password,
-            port=port
-        )
-        self.cursor = self.conn.cursor(cursor_factory=pg.extras.RealDictCursor)
+# class PGSQLConnSession(ContextManager):
+#     def __init__(
+#         self,
+#         host: str,
+#         username: str,
+#         password: str,
+#         port: str
+#     ):
+#         self.conn = pg.connect(
+#             host=host,
+#             user=username,
+#             password=password,
+#             port=port
+#         )
+#         self.cursor = self.conn.cursor(cursor_factory=pg.extras.RealDictCursor)
 
 
 class MSSQLConnSession(ContextManager):
