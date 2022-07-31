@@ -17,9 +17,16 @@ class GetDPNDataTask(StandardTask):
         self.query_hash = sql_query_hash[taskname]
         dbinstance = self.query_hash['db_helper'][userinfo['fab']]
         self.config = current_app.config[dbinstance]
-        
-        
+        self.host_directory = os.environ.get('DPN_DATA_DIRECTORY')
+
+    def init_docker(self):
+        # ensure volume is mounted to container
+        is_docker = os.environ.get('DOCKER') if os.environ.get('DOCKER') else False
+        if is_docker:
+            self.host_directory = os.environ.get('DPN_DATA_DOCKER_MOUNT')
+
     def execute(self):
+        self.init_docker()
         # fetch from snowflake
         logger.info('executing GetDPNData task...')
         fab = 7 if self.userinfo['fab'] == 'F10W' else 10
@@ -33,7 +40,7 @@ class GetDPNDataTask(StandardTask):
         ).query()
 
         logger.info('querying from snowflake successful')
-        write_to_csv(os.path.join(os.environ.get('DPN_DATA_DIRECTORY'), 'dpn_loadport_data.csv'), sql_results)
+        write_to_csv(os.path.join(self.host_directory, 'dpn_loadport_data.csv'), sql_results)
         logger.info('execution of GetDPNDataTask success')
         return 'write to csv success'
 
