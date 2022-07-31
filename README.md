@@ -34,3 +34,9 @@ CELERY_BACKEND=redis://localhost:6379/0
 
 $ docker-compose up -d     # docker compose is using V2, which may interfere with env variables with spacing
 ```
+
+### CAVEAT
+
+If flask/celery is required to read/write files from Windows network drives, currently there is no solution to implement this. Nonetheless, it is possible to do this on Docker host.
+
+https://medium.com/@Flashleo/mounting-windows-file-share-on-docker-container-ac930092c0a5

@@ -47,6 +47,13 @@ class PlotWeeklySPCOOC(StandardTask):
         self.payload = payload
         self.weekly_spc_areas = payload['areas']
         self.fab = userinfo['fab'].upper()
+    
+    def init_docker(self):
+        # ensure volume is mounted to container
+        is_docker = os.environ.get('DOCKER') if os.environ.get('DOCKER') else False
+        if is_docker:
+            self.WEEKLY_SPC_PARENT_DIR = os.environ.get('WEEKLY_SPC_PARENT_DOCKER_MOUNT')
+            self.WEEKLY_SPC_RAW_PATH = os.environ.get('WEEKLY_SPC_RAW_DOCKER_MOUNT')
 
     def populate_empty_rows_algo(self, unique_ww, df):
         def binary_search():
@@ -195,6 +202,8 @@ class PlotWeeklySPCOOC(StandardTask):
     def execute(self):
         logger.info('executing PlotWeeklySPCOOC task...')
 
+        self.init_docker()
+        
         # clear existing PNG files
         for png in os.listdir(os.path.join(self.WEEKLY_SPC_PARENT_DIR, 'png_plots')):
             os.remove(os.path.join(self.WEEKLY_SPC_PARENT_DIR, 'png_plots', png))

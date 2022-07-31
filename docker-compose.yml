@@ -1,14 +1,63 @@
-# Flask container
 version: "3.0"
 services:
-  web:
-    container_name: pee_df_adhoc_requests
-    build: .
+  messagebroker:
+    container_name: redis
+    image: redis:7.0.4
+    volumes:
+      - messagebroker:/data
     ports:
-      - "4280:4280"
+      - 6379:6379
+    networks:
+      - pee_df_adhoc_requests
+
+  webapp:
+    container_name: pee_df_adhoc_requests_flask
+    privileged:
+    image: pee_df_adhoc_requests
+    build:
+      context: .
+    ports:
+      - 4280:4280
     env_file:
       - src\enter_app_name\.env
-# networks:
-#   default:
-#     external: true
-#     name: backend_default # Need to connect to same network as sql container
+    environment:
+      - FLASK_APP=enter_app_name/flask_app.py
+      - FLASK_RUN_HOST=0.0.0.0
+      - FLASK_RUN_PORT=4280
+    # command: ["sh", "-c", "cd /data/dpn_data && echo files in drive... && ls"]
+    entrypoint: ["python3", "-m"]
+    command: ["flask", "run"]
+    links:
+      - messagebroker
+    depends_on:
+      - messagebroker
+    volumes:
+      - messagebroker:/data
+    networks:
+      - pee_df_adhoc_requests
+
+  distributedsystem:
+    container_name: pee_df_adhoc_requests_celery
+    image: pee_df_adhoc_requests
+    env_file:
+      - src\enter_app_name\.env
+    # environment:
+    #   - REDIS_URI=redis://redis:6379/0
+    #   - CELERY_BACKEND=redis://redis:6379/0
+    entrypoint: ["python3", "-m", "celery"] # m is to run library module as script
+    command: ["-A", "enter_app_name.celery_worker.celery", "worker", "--loglevel=info", "-P", "solo"]
+    links:
+      - messagebroker
+    depends_on:
+      - webapp
+      - messagebroker
+    volumes:
+      - messagebroker:/data
+    networks:
+      - pee_df_adhoc_requests
+
+networks:
+  pee_df_adhoc_requests:
+
+volumes:
+  messagebroker:
