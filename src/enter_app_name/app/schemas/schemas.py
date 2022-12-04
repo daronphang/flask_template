@@ -11,6 +11,9 @@ def get_schema(schema: str):
         'CELERY_STATUS': CeleryStatusSchema,
         'GET_DPN_DATA': DPNDataSchema,
         'PLOT_WEEKLY_SPC_OOC': PlotWeeklySPCOOCSchema,
+        'CHECK_LOT_STATUS': CheckLotStatusSchema,
+        'GET_SPC_VIOLATION': SPCViolationSchema,
+        'ESPEC_MONITORING': ESPECMonitoringSchema
     }
     if schema in schema_map:
         return schema_map[schema]()
@@ -57,8 +60,23 @@ class DPNDataSchema(mm.Schema):
     loadport_exit = fields.List(fields.String(required=True))
 
 
+class CheckLotStatusSchema(mm.Schema):
+    lot_id = fields.String(required=True)
+    meas_steps = fields.List(fields.String(required=True))
+
+
+class SPCViolationSchema(mm.Schema):
+    lot_ids = fields.List(fields.String(required=True))
+    meas_steps = fields.List(fields.String(required=True))
+
+
 class PlotWeeklySPCOOCSchema(mm.Schema):
     areas = fields.List(fields.String(required=True))
+
+
+class ESPECMonitoringSchema(mm.Schema):
+    lookbackWeekCount = fields.Integer(required=True)
+    design_ids = fields.List(fields.String(required=True))
 
 # class CrudSchema(ma.Schema):
 #     crud_name = fields.String(required=True)

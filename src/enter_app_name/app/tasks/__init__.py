@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from .espec_monitoring import ESPECMonitoring
+from .fdc_failures import *
 
 class StandardTask(ABC):
     def pre_task(self):

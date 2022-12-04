@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from flask import current_app
 from celery.utils.log import get_task_logger
-from enter_app_name.app.utils import SqlQuery, sql_query_hash, write_to_csv
+from enter_app_name.app.utils import SqlQuery, get_query_hash, write_to_csv
 from .. import StandardTask
 
 
@@ -14,7 +14,7 @@ class GetDPNDataTask(StandardTask):
     def __init__(self, userinfo: dict, payload: dict, taskname: str):
         self.userinfo = userinfo
         self.payload = payload
-        self.query_hash = sql_query_hash[taskname]
+        self.query_hash = get_query_hash(taskname)
         dbinstance = self.query_hash['db_helper'][userinfo['fab']]
         self.config = current_app.config[dbinstance]
         self.host_directory = os.environ.get('DPN_DATA_DIRECTORY')
