@@ -3,10 +3,12 @@ from . import api_v1
 from enter_app_name.app.utils import (
     binary_marshal,
     MissingKey,
-    InvalidField
+    InvalidField,
+    get_query_hash,
+    SqlQuery
 )
 from enter_app_name.app.schemas import get_schema
-from enter_app_name.app.tasks import tasks
+from enter_app_name.app.tasks import tasks, ESPECMonitoring, GetFDCFailuresTask
 
 
 @api_v1.route('/heartbeat', methods=['GET'])
@@ -19,6 +21,40 @@ def heartbeat():
 def testing_schema():
     get_schema('TESTING_SCHEMA').load(g.context)
     return jsonify({"response": "schema validated"})
+
+@api_v1.route('/query/<name>', methods=['POST'])
+def query(name):
+    name = name.upper()
+    userinfo, payload = g.context['userinfo'], g.context['payload']
+    get_schema(name).load(payload)
+
+    query_hash = get_query_hash(name)
+    db_name = query_hash['db_helper'][userinfo['fab']]
+    config = current_app.config[db_name] 
+    
+    resp = SqlQuery(
+            config,
+            payload,
+            query_hash['sql_string'],
+            query_hash['sql_helper'],
+            'DEFAULT'
+        ).query()
+
+    # if need to deserialize bytes data 
+    if 'pickle_helper' in query_hash:
+        resp = binary_marshal(resp, query_hash['pickle_helper'])
+    return jsonify({'response': resp})
+
+@api_v1.route('/espec', methods=['POST'])
+def espec():
+    userinfo, payload = g.context['userinfo'], g.context['payload']
+    return ESPECMonitoring(userinfo, payload).execute()
+
+@api_v1.route('/fdc_violation', methods=['POST'])
+def fdc_violation():
+    userinfo, payload = g.context['userinfo'], g.context['payload']
+    results = GetFDCFailuresTask(userinfo, payload, 'GET_FDC_VIOLATION').execute()
+    return jsonify({'results': results})
 
 
 @api_v1.route('/task/<taskname>', methods=['POST'])

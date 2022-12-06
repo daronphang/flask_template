@@ -52,12 +52,21 @@ def binary_marshal(cursor_data: list, columns: list):
     return cursor_data
 
 def curry(fn, arg_count: int):
-    # tuple of arguments must match with arg_count, else error will be thrown
+    # tuple of arguments must match with arg_count
+    # concern of memory leak if not cleared
+    closure_args = []
+
     def curried(*args):
-        if (len(args) != arg_count):
-            raise Exception(f'number of args does not match with specified count')
-        return fn(*args)
-    return curried(args)
+        nonlocal closure_args
+        if len(closure_args)+len(args) >= arg_count:
+            return fn(*closure_args,*args)
+        elif args[0] == 'GARBAGE_COLLECT':
+            # garbage collect
+            del closure_args
+            return
+        closure_args += args
+        return curried
+    return curried
 
 def write_to_csv(filename: str, data: list):
     # data is a list of dictionaries
@@ -73,4 +82,4 @@ def composite_fn(*fns):
     # result from each function is passed on to the next
     def compose(f,g):
         return lambda x: g(f(x))    # result from f(x) is passed to g as arg
-    return reduce(compose, fns)
+    return reduce(compose, fns, lambda x : x)

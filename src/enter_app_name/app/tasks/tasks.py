@@ -5,6 +5,7 @@ from enter_app_name.app import celery
 from enter_app_name.app.utils import CeleryFailure, InvalidField
 from .get_dpn_data import GetDPNDataTask
 from .plot_weekly_spc_ooc import PlotWeeklySPCOOC
+from .espec_monitoring import ESPECMonitoring
 
 
 logger = get_task_logger(__name__)
@@ -34,6 +35,8 @@ def automated_task(self, taskname: str, userinfo: dict, payload: dict):
         concrete = GetDPNDataTask(userinfo, payload, taskname)
     elif taskname == 'PLOT_WEEKLY_SPC_OOC':
         concrete = PlotWeeklySPCOOC(userinfo, payload)
+    elif taskname == 'ESPEC_MONITORING':
+        concrete = ESPECMonitoring(userinfo, payload)
     else:
         raise InvalidField(f'{taskname} task does not exist')
 
